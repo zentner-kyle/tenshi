@@ -5,6 +5,9 @@ function start_game()
   require "PiE"
   require "student"
   local co = coroutine.create(function ()
+
+    bind_devices()
+
     setup()
 
     auto()

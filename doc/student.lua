@@ -2,7 +2,7 @@ require "PiE"
 require "bindings"
 
 function setup()
-  bind_devices()
+  print("In setup!")
 end
 
 function go(left, right)

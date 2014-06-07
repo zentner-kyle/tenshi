@@ -102,8 +102,10 @@ function second(n)
     function ()
       local time = os.time()
       if time - start_time > n then
+        print("Done!")
         return time
       else
+        print("Not done!")
         return nil
       end
     end)
@@ -143,30 +145,32 @@ function wait_raw(args, vals, depth)
   local srcs = args
   local events = {}
   local func = function ()
-    for i,s in ipairs(srcs) do
-      if not(s.listen) then
-        print(repr(s))
+    while true do
+      for i,s in ipairs(srcs) do
+        --if not(s.listen) then
+          --print(repr(s))
+        --end
+        s:listen()
       end
-      s:listen()
-    end
 
-    coroutine.yield()
+      coroutine.yield()
 
-    for i,s in ipairs(srcs) do
-      events[s] = s:event()
-    end
-
-    for i,s in ipairs(srcs) do
-      s:ignore()
-    end
-
-    if need(events) then
-      local vals = {}
-      for s in ipairs(srcs) do
-        -- Avoid having nil in the vals table
-        vals[i] = events[s].value or 0
+      for i,s in ipairs(srcs) do
+        events[s] = s:event()
       end
-      return unpack(vals)
+
+      for i,s in ipairs(srcs) do
+        s:ignore()
+      end
+
+      if need(events) then
+        local vals = {}
+        for s in ipairs(srcs) do
+          -- Avoid having nil in the vals table
+          vals[i] = events[s].value or 0
+        end
+        return unpack(vals)
+      end
     end
   end
 
