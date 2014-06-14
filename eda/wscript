@@ -3,7 +3,7 @@ from __future__ import print_function
 
 import glob
 import os.path
-from waf_extensions import declare_variants
+from waf_extensions import declare_variants, add_dependency
 
 declare_variants(subdir='boards')
 
@@ -41,6 +41,7 @@ def build(bld):
                  '${root}/tools/parts-db.yaml',
             source=base_name,
             target=outfile)
+        add_dependency(bld, outfile, '${root}/tools/parts-db.yaml')
         if build_docu_packets:
             pdffile = ('../../artifacts/boards/' +
                        os.path.splitext(base_name)[0] + '.pdf')
