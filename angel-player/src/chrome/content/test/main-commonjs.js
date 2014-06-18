@@ -1,5 +1,5 @@
 const url = require ('jetpack/sdk/url');
-const file = require('jetpack/sdk/io/file');
+const fs = require('jetpack/sdk/io/fs');
 const { Cu, Cc, Ci } = require('chrome');
 const console =
     Cu.import("resource://gre/modules/devtools/Console.jsm").console;
@@ -10,7 +10,26 @@ const TEST_DIR = 'chrome://angel-player/content/test/tests';
 
 exports.onLoad = function(window) {
     let testDir = url.toFilename(TEST_DIR);
-    let tests = file.list(testDir);
+    let tests = [];
+
+    // Walk down the directory tree, and include all files in subdirectories.
+    // Will get stuck on directory loops.
+    function addFiles (root, relative) {
+      // Invariant: (root + '/' + relative) ends with '/'
+      for (let f of fs.readdirSync(root + '/' + relative)) {
+        let path = root + '/' + relative + f;
+        let stat = fs.statSync(path);
+        if (stat.isDirectory()) {
+          addFiles(root, relative + f + '/');
+        } else {
+          tests.push(relative + f);
+        }
+      }
+    }
+
+    addFiles(testDir, '');
+
+    appStartup.quit(appStartup.eForceQuit);
 
     let testsAllPassed = true;
 
