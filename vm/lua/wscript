@@ -87,7 +87,7 @@ def build(bld):
             contents = f.read()
             api_aux_fns = func_decl.findall(contents)
 
-        js_api_fns = ['registerJS']
+        js_api_fns = ['registerJS', 'thread_setup', 'thread_run_ticks']
 
         export_str = ','.join(
             "'_{}'".format(fn) for fn in api_fns + api_aux_fns + js_api_fns)
