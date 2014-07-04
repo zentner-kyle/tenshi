@@ -9,7 +9,6 @@ function printMethods(obj)
 
 function printOut(string)
 {
-  Components.utils.reportError(string);
   console.log(string);
 }
 
