@@ -12,9 +12,7 @@ def declare_variants(args=None, subdir=''):
     if not args:
         args = ['']
     for a in args:
-        var = a
-        if subdir != '':
-            var = subdir + '/' + a
+        var = (subdir + '/' + a).strip('/')
         ctxts = []
         ctxt_re = re.compile('(\w+)Context')
         for key, ctxt in waflib.Build.__dict__.items():
