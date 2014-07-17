@@ -18,7 +18,7 @@ void initBuzzer() {
 }
 void activeBuzzerRec(uint8_t *data, uint8_t len, uint8_t inband) {
 }
-void activeBuzzerSend(uint8_t *outData, uint8_t *outLen, uint8_t inband) {
+void activeBuzzerSend(uint8_t *outData, uint8_t *outLen, uint8_t *inband) {
   // TODO(cduck): Write this function
 }
 

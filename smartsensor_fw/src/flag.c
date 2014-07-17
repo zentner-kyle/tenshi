@@ -29,6 +29,6 @@ void activeFlagRec(uint8_t *data, uint8_t len, uint8_t inband) {
     }
   }
 }
-void activeFlagSend(uint8_t *outData, uint8_t *outLen, uint8_t inband) {
+void activeFlagSend(uint8_t *outData, uint8_t *outLen, uint8_t *inband) {
   // Nothing to send
 }
