@@ -2,6 +2,7 @@
 // This file lets the smart sensor code call grizzly code
 
 #include "inc/smartsensor/ss_type.h"
+#include "inc/smartsensor/common.h"
 
 #include "inc/ss_grizzly3.h"
 

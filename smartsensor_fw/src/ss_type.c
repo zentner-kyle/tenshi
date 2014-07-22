@@ -1,5 +1,6 @@
 
 #include "inc/smartsensor/ss_type.h"
+#include "inc/smartsensor/common.h"
 
 #include "inc/digital.h"
 #include "inc/analog_in.h"
