@@ -21,7 +21,7 @@
 #define SENSOR_REPLY_TIMEOUT 7  // ms
 
 // Smart sensor packet type definitions
-#define SS_PACKET_DESCRIPTOR 0x81
+#define SS_PACKET_DESCRIPTOR 0xD1
 
 #define MAGIC_SEQUENCE_LEN 21
 #define MAGIC_SEQUENCE 0xE6, 0xAD, 0xBB, 0xE3, 0x82, 0x93, 0xE3, 0x81, 0xA0, \
