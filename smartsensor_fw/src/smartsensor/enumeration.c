@@ -1,5 +1,7 @@
 // This file handles enumeration packets
 
+#include <avr/pgmspace.h>
+
 #include "inc/smartsensor/enumeration.h"
 
 #define TYPE_ENUMERATION_ENTER 0xF0
@@ -71,7 +73,8 @@ void enumerationSelect(uint8_t *data, uint8_t len) {
   if (!enumerating) return;
   if (len < 2*SMART_ID_LEN) return;
   for (uint8_t i = 0; i < SMART_ID_LEN; ++i) {
-    if ((data[i] ^ smartID[i]) & data[i+SMART_ID_LEN]) return;  // Doesn't match
+    // Doesn't match
+    if ((data[i] ^ pgm_read_byte(&smartID[i])) & data[i+SMART_ID_LEN]) return;
   }
 
   // Fix for floating bus when not driven
@@ -85,7 +88,8 @@ void enumerationUnselect(uint8_t *data, uint8_t len) {
   if (!enumerating) return;
   if (len < 2*SMART_ID_LEN) return;
   for (uint8_t i = 0; i < SMART_ID_LEN; ++i) {
-    if ((data[i] ^ smartID[i]) & data[i+SMART_ID_LEN]) return;  // Doesn't match
+    // Doesn't match
+    if ((data[i] ^ pgm_read_byte(&smartID[i])) & data[i+SMART_ID_LEN]) return;
   }
   enumerationReset(data, len);
 }
