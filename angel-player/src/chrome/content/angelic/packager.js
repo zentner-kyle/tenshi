@@ -498,7 +498,7 @@ var root = {
     return size;
     },
   make_patch : function make_patch ( obj, rows ) {
-    var header_size = this.factory.get_size ( 'ngl_buffer' );
+    var header_size = this.factory.get_size ( 'ngl_buffer', true );
     var buf = new buffer.Buffer ( header_size + this.bytecode_size ( rows ) );
     // This makes binary diffs cleaner.
     buf.fill ( 0 );
