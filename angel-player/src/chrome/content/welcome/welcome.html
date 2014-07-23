@@ -1,35 +1,55 @@
-<style scoped>
-    @import url(chrome://angel-player/content/welcome/welcome.css);
-</style>
-<script>
-    requireStub('tenshi/welcome/welcome.js');
-</script>
+<div>
+  <style scoped>
+      @import url('welcome.css');
+      @import url(chrome://angel-player/content/welcome/welcome.css);
+  </style>
+  <script src="../vendor-js/jquery.js"></script>
 
 <div id="welcome-body">
-    <p>
-        Hello world! To get started, click on one of the above tabs.
-    </p>
-    <div>
-        <button type="button" id="openButton">
-            Open
-        </button>
-        <button type="button" id="saveButton">
-            Save
-        </button>
+  <div class="relative-container">
+    <div id="welcome-body">
+      <div class="left column-container no-select">
+        <div class="side-column left" ng-controller="IoPortCtrl">
+            <div class="side-row">
+              <button type="button" class="big" id="openButton">
+                  Open
+              </button>
+            </div>
+            <div class="side-row">
+              <button type="button" class="big" id="saveButton">
+                  Save
+              </button>
+            </div>
+            <div class="side-row">
+              <span class="label">Serial port:</span>
+              <input type="text" class="field" id="serialPort" required ng-model="xbeeAddr"/>
+            </div>
+            <div class="side-row">
+              <span class="label">XBee address:</span>
+              <input type="text" class="field" id="xbeeAddrInput" pattern="[0-9a-fA-F]{16}" ng-controller="IoPortCtrl"/>
+            </div>
+            <div class="side-row">
+              <button type="button" class="big" id="connectButton">Connect</button>
+            </div>
+            <div class="side-row">
+              <button type="button" class="big" id="disconnectButton"> Disconnect </button>
+            </div>
+            <!--<div class="side-row">-->
+            <!--</div>-->
+        </div>
+      </div>
+      <script>
+        $(document).ready(function () {
+          var loc = window.location + "";
+          $('wiki-iframe').attr('src', loc.replace(/welcome.html/, 'wiki.html'));
+        });
+      </script>
+      <div id="wiki-container">
+        <iframe id="wiki-iframe" allowtransparency="true"/>
+      </div>
     </div>
-    <div ng-controller="IoPortCtrl">
-        XBee address:
-        <input type="text" id="xbeeAddrInput" pattern="[0-9a-fA-F]{16}"
-            required ng-model="xbeeAddr">
-        </input>
-        Serial port:
-        <input type="text" id="serialPort" required ng-model="serialPort">
-        </input>
-        <button type="button" id="connectButton">
-            Connect
-        </button>
-        <button type="button" id="disconnectButton">
-            Disconnect
-        </button>
-    </div>
+  </div>
+  <!--<script>-->
+      <!--requireStub('tenshi/welcome/welcome.js');-->
+  <!--</script>-->
 </div>

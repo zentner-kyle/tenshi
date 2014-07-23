@@ -1,12 +1,127 @@
+.relative-container {
+  /*position: relative;*/
+  width: 100%;
+  height: 100%;
+  /*padding: 0;*/
+  position: absolute;
+  /*top: 0;*/
+  /*left: 0;*/
+  /*padding: 0;*/
+}
+
+.no-select {
+  -moz-user-select: none;
+}
+
 #welcome-body {
-    background-size: cover;
-    background-repeat: no-repeat;
-    width: 100%;
-    height: 100%;
-    /* TODO(rqou): Figure out why we need this??? */;
-    position: absolute;
+  /*background-image: url("assets/Angel_player.jpg");*/
+  background-image: url("assets/gold.1-1.png");
+  background-position: 0 0;
+  /*background-attachment: fixed;*/
+  /*background-origin: border-box;*/
+  background-size: cover;
+  /*background-repeat: no-repeat;*/
+  width: 100%;
+  height: 100%;
+  /* TODO(rqou): Figure out why we need this??? */;
+  /*position: absolute;*/
+  /*top: 0;*/
+  /*left: 0;*/
+  font-family: "Latin Modern";
+  font-size: 1.25em;
+  color: #000;
+
+  /*justify-content: space-between;*/
+  /*align-items: center;*/
+  flex-direction: row;
+  display: flex;
+}
+
+button.big {
+  width: 100%;
+  font-size: 1.25em;
+  /*background: #eee;*/
+  border-radius: 0.25em;
+  font-family: "Latin Modern";
+  color: #000;
+  background: linear-gradient(to bottom, rgba(240, 240, 240, 0.5), #ccc);
+  text-shadow: 0 0.1em 0.1em rgba(0, 0, 0, 0.3);
+  box-shadow: 0 0.2em 0.3em rgba(0, 0, 0, 0.3);
+  border-style: none;
+}
+
+.side-column {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  width: 100%;
+}
+
+button.big:hover {
+  background: linear-gradient(to bottom, #fff, rgba(255, 255, 255, 0.8));
+}
+
+div.side-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  height: 2em;
+  padding: 0.5em;
+  margin-bottom: 0.5em;
+  width: 100%;
+  background-color: rgba(240, 240, 240, 0.5);
+  border-radius: 0.5em;
+}
+
+span.label {
+  float: left;
+  width: 8em;
+}
+input.field {
+  float: right;
+  flex-grow: 1;
+  border-radius: 0.5em;
+  padding: 0.25em;
+  background: rgba(0, 0, 0, 0);
+  border-style: solid;
+  border-color: rgba(0, 0, 0, 0.5);
+  border-width: 0.125em;
+}
+
+.column-container {
+  padding: 1.2em;
+  width: 18em;
+}
+
+#wiki-container {
+  float: right;
+  flex-grow: 1;
+  padding: 1.2em;
+}
+
+#wiki-iframe {
+  display: block;
+  border-style: none;
+  flex-grow: 1;
+  height: 100%;
+  width: 100%;
+  float: right;
+  border-radius: 0.5em;
+  background-color: transparent;
+}
+
+.left {
+  float: left;
+}
+
+.right {
+  float: right;
 }
 
 input:invalid {
-    background: red;
+    background: rgba(0, 0, 0, 0);
+    box-shadow: inset 0 0 0.25em 0.25em rgba(255, 0, 0, 0.5);
 }
