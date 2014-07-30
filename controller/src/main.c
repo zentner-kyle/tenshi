@@ -4,6 +4,7 @@
 #include <lua.h>
 #include <lualib.h>
 #include <lauxlib.h>
+#include <ndl3.h>
 #include <ngl_vm.h>
 #include <ngl_buffer.h>
 #include <ngl_package.h>
@@ -181,6 +182,12 @@ static portTASK_FUNCTION_PROTO(radioTask, pvParameters) {
     }
     // ident byte for PiEMOS framing
     switch (packetIn->payload.rx64.data[0]) {
+    case NDL3_IDENT:
+      {
+        // Both the +1 and -1 are because of the ident byte.
+        NDL3_L2_push(layer3, packetIn->payload.rx64.data + 1,
+                     packetIn->length - sizeof(xbee_rx64_header) - 1);
+      }
     case PIER_INCOMINGDATA_IDENT:
       {
         pier_incomingdata *incomingData =
