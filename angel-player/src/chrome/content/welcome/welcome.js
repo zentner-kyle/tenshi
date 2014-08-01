@@ -28,6 +28,7 @@ function connectRadio() {
     global_state.set('serial_port_object', serportObj);
 
     let addr = ioports.get_xbee_addr();
+      //global_state.get('robot_application').radio_pairing_info;
     let main_radio = global_state.get('main_radio');
     main_radio.connectXBee(addr, serportObj);
 
