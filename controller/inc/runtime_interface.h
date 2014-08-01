@@ -1,5 +1,5 @@
-#ifndef INC_LUA_INTERFACE_H_
-#define INC_LUA_INTERFACE_H_
+#ifndef INC_RUNTIME_INTERFACE_H_
+#define INC_RUNTIME_INTERFACE_H_
 
 #include <lua.h>
 #include <lualib.h>
@@ -55,5 +55,4 @@ int lua_set_motor(lua_State *L);
 
 
 
-#endif  // INC_LUA_INTERFACE_H_
-
+#endif  // INC_RUNTIME_INTERFACE_H_

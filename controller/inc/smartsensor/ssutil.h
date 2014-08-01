@@ -33,8 +33,6 @@
                        0xa0, 0xe4, 0xb8, 0x96, 0xe7, 0x95, 0x8c, 0xe6, 0x88, \
                        0xa6, 0xe7, 0xb7, 0x9a /* NOLINT(*) */
 
-#define SS_MAX_ANALOG_VAL 1023.0
-
 
 
 typedef struct {
@@ -44,6 +42,18 @@ typedef struct {
   uint8_t additionalLen;
   uint8_t *additional;  // Sensor type specific data
                         // TODO(cduck): Actually use the additional information
+
+  // Communication buffers and locks
+  xSemaphoreHandle outLock;  // Same out lock for the entire sensor
+  size_t outgoingLen;  // Calculated from descriptor; don't modify
+  uint8_t *outgoingBytes;  // Points to the middle of the sensor's outgoingBytes
+  xSemaphoreHandle inLock;  // Same in lock for the entire sensor
+  size_t incomingLen;  // Calculated from descriptor; don't modify
+  uint8_t *incomingBytes;  // Points to the middle of the sensor's incomingBytes
+
+  uint8_t isActuator;
+  uint8_t isSensor;
+  uint8_t isProtected;  // True if student code is not allowed access
 } SSChannel;
 
 typedef struct {
@@ -52,11 +62,11 @@ typedef struct {
   uint8_t busNum;
 
   // Communication buffers and locks
-  xSemaphoreHandle outLock;
-  size_t outgoingLen;
+  xSemaphoreHandle outLock;  // Same out lock for the entire sensor
+  size_t outgoingLen;  // Calculated from descriptor; don't modify
   uint8_t *outgoingBytes;
-  xSemaphoreHandle inLock;
-  size_t incomingLen;
+  xSemaphoreHandle inLock;  // Same in lock for the entire sensor
+  size_t incomingLen;  // Calculated from descriptor; don't modify
   uint8_t *incomingBytes;
 
   uint8_t hasReadDescriptor;
@@ -95,18 +105,10 @@ extern xSemaphoreHandle sensorArrLock;
 
 
 // Functions to enable external code to set and read sensors
-void ss_set_digital_value(int sensorIndex, uint8_t val);
-uint8_t ss_get_digital_value(int sensorIndex);
-
-void ss_set_analog_value(int sensorIndex, unsigned int val);
-double ss_get_analog_value(int sensorIndex);
-
-void ss_set_motor_value(int sensorIndex, uint8_t mode, double speed);
-
-void ss_set_value(int sensorIndex, uint8_t *data, size_t len);
+void ss_set_value(SSChannel *channel, uint8_t *data, size_t len);
 // len is the maximum number to be stored in the data buffer.
 // Returns how many extra bytes were not stored in data buffer.
-int ss_get_value(int sensorIndex, uint8_t *data, size_t len);
+int ss_get_value(SSChannel *channel, uint8_t *data, size_t len);
 
 
 // Helper functions for smartsensor.c
@@ -118,10 +120,8 @@ size_t ss_add_sensors(KnownIDs *sensors);
 void ss_recieved_data_for_sensor(SSState *s, uint8_t *data, size_t len,
   uint8_t inband);
 // Assuming the sensor is already locked
-void allocIncomingBytes(SSState *sensor, uint8_t requiredLen);
-int checkOutgoingBytes(SSState *sensor, uint8_t requiredLen);
-void allocOutgoingBytes(SSState *sensor, uint8_t requiredLen);
-int checkIncomingBytes(SSState *sensor, uint8_t requiredLen);
+int checkOutgoingBytes(SSChannel *sensor, uint8_t requiredLen);
+int checkIncomingBytes(SSChannel *sensor, uint8_t requiredLen);
 
 
 // Functions for getting sensor descriptor data
