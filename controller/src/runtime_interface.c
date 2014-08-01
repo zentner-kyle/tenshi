@@ -1,7 +1,8 @@
 
-#include "inc/lua_interface.h"
+#include "inc/runtime_interface.h"
 #include "inc/smartsensor/smartsensor.h"
 #include "inc/smartsensor/ssutil.h"
+#include "inc/smartsensor/sstype.h"
 #include "inc/led_driver.h"
 #include "inc/button_driver.h"
 
@@ -37,14 +38,23 @@ int lua_get_button(lua_State *L) {
 
 int lua_get_digital(lua_State *L) {
   int sensorIndex = lua_tonumber(L, 1);
-  lua_pushnumber(L, ss_get_digital_value(sensorIndex));
+  if (sensorIndex < numSensors) {
+    SSState *sensor = sensorArr[sensorIndex];
+    lua_pushnumber(L, ss_get_digital_value(sensor));
+  } else {
+    lua_pushnumber(L, 0);
+  }
   return 1;
 }
 int lua_set_digital(lua_State *L) {
   int sensorIndex = lua_tonumber(L, 1);
   uint8_t sensorVal = (uint8_t)lua_tonumber(L, 2);
 
-  ss_set_digital_value(sensorIndex, sensorVal);
+  if (sensorIndex < numSensors) {
+    SSState *sensor = sensorArr[sensorIndex];
+    ss_set_digital_value(sensor, sensorVal);
+  } else {
+  }
 
   lua_pushnumber(L, 1);  // 1 means ok.
   return 1;
@@ -52,14 +62,23 @@ int lua_set_digital(lua_State *L) {
 
 int lua_get_analog(lua_State *L) {
   int sensorIndex = lua_tonumber(L, 1);
-  lua_pushnumber(L, ss_get_analog_value(sensorIndex));
+  if (sensorIndex < numSensors) {
+    SSState *sensor = sensorArr[sensorIndex];
+    lua_pushnumber(L, ss_get_analog_value(sensor));
+  } else {
+    lua_pushnumber(L, 0);
+  }
   return 1;
 }
 int lua_set_analog(lua_State *L) {
   int sensorIndex = lua_tonumber(L, 1);
   unsigned int sensorVal = (unsigned int)lua_tonumber(L, 2);
 
-  ss_set_analog_value(sensorIndex, sensorVal);
+  if (sensorIndex < numSensors) {
+    SSState *sensor = sensorArr[sensorIndex];
+    ss_set_analog_value(sensor, sensorVal);
+  } else {
+  }
 
   lua_pushnumber(L, 1);  // 1 means ok.
   return 1;
@@ -70,7 +89,11 @@ int lua_set_motor(lua_State *L) {
   uint8_t mode = GRIZZLY_DEFAULT_MODE;
   double speed = lua_tonumber(L, 2);
 
-  ss_set_motor_value(sensorIndex, mode, speed);
+  if (sensorIndex < numSensors) {
+    SSState *sensor = sensorArr[sensorIndex];
+    ss_set_motor_value(sensorIndex, mode, speed);
+  } else {
+  }
 
   lua_pushnumber(L, 1);  // 1 means ok.
   return 1;
