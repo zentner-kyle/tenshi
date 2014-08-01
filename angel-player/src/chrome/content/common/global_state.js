@@ -15,3 +15,7 @@ exports.set = function(key, val) {
 exports.get = function(key) {
     return state[key];
 };
+
+const radio = require('tenshi/common/radio');
+
+exports.set('main_radio', new radio.Radio());
