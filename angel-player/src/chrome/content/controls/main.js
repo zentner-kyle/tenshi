@@ -1,6 +1,7 @@
 /* jshint globalstrict: true */
 "use strict";
 
+let global_state = require('tenshi/common/global_state');
 let window = require('tenshi/common/window')();
 let {$} = window;
 
@@ -76,6 +77,8 @@ function compile_ngl() {
     compiler_vm.load_text(text);
     var pkg = compiler_vm.get_pkg('ARM');
     naive_packetizer.sendPacketizedData(pkg);
+    let main_radio = global_state.get('main_radio');
+    main_radio.send(pkg, 'code');
 }
 
 function compile_lua() {
@@ -107,4 +110,6 @@ function compile_lua() {
     lua.Runtime.removeFunction(lua_dump_callback_ptr);
 
     naive_packetizer.sendPacketizedData(lua_bytecode);
+    let main_radio = global_state.get('main_radio');
+    main_radio.send(lua_bytecode, 'code');
 }
