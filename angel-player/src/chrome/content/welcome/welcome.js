@@ -17,6 +17,8 @@ function connectRadio() {
     disconnectRadio();
 
     let serPortName = ioports.get_serial_port();
+      //global_state.get('serial_port');
+    console.log('serPortName:', serPortName);
     if (!serPortName) {
         throw "No serial port set!";
     }
