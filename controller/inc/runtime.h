@@ -21,9 +21,13 @@ typedef enum {
 } RuntimeMode;
 
 
+
+extern volatile int gameMode;
+
+
+
 BaseType_t runtimeInit();
-/*
 void runtimeSendRadioMsg(RuntimeMessageType type, void* info);
-*/
+
 
 #endif  // INC_RUNTIME_H_

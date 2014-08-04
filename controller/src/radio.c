@@ -82,7 +82,7 @@ int radio_uart_serial_send_and_finish_data(const uint8_t *data, size_t len) {
 static portTASK_FUNCTION_PROTO(radioNewTask, pvParameters) {
   (void) pvParameters;
 
-  NDL3Net * target = NDL3_new(NULL, NULL, NULL);
+  NDL3Net * target = NDL3_new(pvPortMalloc, vPortFree, NULL);
   NDL3_open(target, NDL3_UBJSON_PORT);
   NDL3_open(target, NDL3_STRING_PORT);
   NDL3_open(target, NDL3_CODE_PORT);

@@ -1,6 +1,8 @@
 #ifndef INC_SMARTSENSOR_SSUTIL_H_
 #define INC_SMARTSENSOR_SSUTIL_H_
 
+#include <string.h>
+
 #include "inc/FreeRTOS.h"
 #include "inc/semphr.h"
 #include "inc/event_groups.h"
@@ -11,6 +13,13 @@
 #define GRIZZLY_DEFAULT_MODE 0x03  // No PID
 
 #define SMART_ID_LEN 8   // Length of smartsensor personal ID
+#define SMART_ID_SCANF "%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx"
+#define SMART_ID_SCANF_LEN 40  // This must equal the length of the string above
+#if SMART_ID_SCANF_LEN != SMART_ID_LEN * 5
+  #error Length of smart senosr ID scanf format string does  /* NOLINT(*) */\
+  not match SMART_ID_LEN.  /* NOLINT(*) */
+#endif
+
 #define SS_MAX_ACTIVE_LEN (16-4)  // Most bytes that can be sent to a sensor
                                   // during active bus mode.
 
@@ -117,6 +126,8 @@ SSState *ss_init_sensor(uint8_t id[SMART_ID_LEN], uint8_t busNum);
 size_t ss_add_new_sensor(uint8_t id[SMART_ID_LEN], uint8_t busNum);
 size_t ss_add_sensor(SSState *sensor);
 size_t ss_add_sensors(KnownIDs *sensors);
+SSState *ss_find_sensor(uint8_t id[SMART_ID_LEN]);
+
 void ss_recieved_data_for_sensor(SSState *s, uint8_t *data, size_t len,
   uint8_t inband);
 // Assuming the sensor is already locked

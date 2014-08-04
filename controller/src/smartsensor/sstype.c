@@ -46,6 +46,23 @@ uint8_t ss_channel_is_protected(SSChannel *channel) {
     default: return 0;
   }
 }
+const char * ss_channel_name(SSChannel *channel) {
+  switch (channel->type) {
+    case CHANNEL_TYPE_MODE: return "mode";
+    case SENSOR_TYPE_DIGITAL:
+      if (!!(channel->additional[0] & 0x0C)) {  // Either can output bit
+        return "led";
+      } else {
+        return "switch";
+      }
+    case SENSOR_TYPE_ANALOG_IN: return "analog";
+    case SENSOR_TYPE_GRIZZLY3: return "grizzly";
+    case SENSOR_TYPE_BUZZER: return "buzzer";
+    case SENSOR_TYPE_FLAG: return "flag";
+    // TODO(cduck): Add more types
+    default: return NULL;
+  }
+}
 uint8_t ss_channel_out_length(SSChannel *channel) {
   switch (channel->type) {
     case CHANNEL_TYPE_MODE:
@@ -85,18 +102,20 @@ uint8_t ss_channel_in_length(SSChannel *channel) {
 
 
 
-
-void ss_set_digital_value(SSChannel *channel, uint8_t val) {
+void ss_set_mode_val(SSChannel *channel, uint8_t val) {
   ss_set_value(channel, &val, 1);
 }
-uint8_t ss_get_digital_value(SSChannel *channel) {
+void ss_set_led_val(SSChannel *channel, uint8_t val) {
+  ss_set_value(channel, &val, 1);
+}
+uint8_t ss_get_switch_val(SSChannel *channel) {
   // If no value has been recieved yet default to 0.
   uint8_t result = 0;
   ss_get_value(channel, &result, 1);
   return result;
 }
 
-void ss_set_analog_value(SSChannel *channel, double num) {
+void ss_set_analog_val(SSChannel *channel, double num) {
   if (num < 0.) num = 0.;
   if (num > 1.) num = 1.;
 
@@ -113,7 +132,7 @@ void ss_set_analog_value(SSChannel *channel, double num) {
 
   ss_set_value(channel, data, val_len);
 }
-double ss_get_analog_value(SSChannel *channel) {
+double ss_get_analog_val(SSChannel *channel) {
   uint8_t bitsPerSample = 8;
   if (channel->additionalLen >= 3) bitsPerSample = channel->additional[2];
   if (bitsPerSample < 1) bitsPerSample = 8;
@@ -132,7 +151,7 @@ double ss_get_analog_value(SSChannel *channel) {
   return result/factor;
 }
 
-void ss_set_motor_value(SSChannel *channel, uint8_t mode, double speed) {
+void ss_set_grizzly_val(SSChannel *channel, uint8_t mode, double speed) {
   uint8_t data[5];
   data[0] = mode;
   int32_t speed32 = (int32_t)(speed * 65536.f);

@@ -16,6 +16,7 @@
 #include <inc/runtime_entry.h>
 
 #include "inc/runtime.h"
+#include "inc/runtime_interface.h"
 
 #include "inc/button_driver.h"
 #include "inc/led_driver.h"
@@ -34,13 +35,12 @@ typedef struct {
 
 QueueHandle_t messageQueue = NULL;
 
+volatile int gameMode = RuntimeModeUninitialized;
+
 
 void sensorUpdateCallback(uint16_t index, SSState *sensor);
 
 void setLedError(int err);
-int registerAllSensors(TenshiRuntimeState s);
-int setupTenshiRuntime(TenshiRuntimeState *s, TenshiActorState *a,
-  const char *studentCode, size_t studentCodeLen);
 
 static portTASK_FUNCTION_PROTO(runtimeTask, pvParameters);
 
@@ -48,6 +48,9 @@ static portTASK_FUNCTION_PROTO(runtimeTask, pvParameters);
 
 BaseType_t runtimeInit() {
   messageQueue = xQueueCreate(100, sizeof(RuntimeMessage));
+
+  // Get updates from smart sensor protocol
+  registerSensorUpdateCallback(&sensorUpdateCallback);
 
   return xTaskCreate(runtimeTask, "Runtime", 2048, NULL, tskIDLE_PRIORITY,
                      NULL);
@@ -77,100 +80,54 @@ void setLedError(int err) {
   led_driver_set_mode(PATTERN_RUNTIME_ERROR);
   led_driver_set_fixed(err, 0);  // Press button 0 to view this error code
 }
-int registerAllSensors(TenshiRuntimeState s) {
-  int ret = RUNTIME_OK, firstErr = RUNTIME_OK;
-  for (uint16_t i = 0; i < numSensors; ++i) {
-    SSState *sensor = sensorArr[i];
-    // if (sensor->isActuator) {
-      ret = MBoxCreateActuator(s, sensor->id, sizeof(sensor->id), i);
-      if (ret != RUNTIME_OK && firstErr == RUNTIME_OK) firstErr = ret;
-    // }
-    // if (sensor->isSensor) {
-      ret = MBoxCreateSensor(s, sensor->id, sizeof(sensor->id), i);
-      if (ret != RUNTIME_OK && firstErr == RUNTIME_OK) firstErr = ret;
-    // }
-  }
-  return firstErr;
-}
-int setupTenshiRuntime(TenshiRuntimeState *s, TenshiActorState *a,
-  const char *studentCode, size_t studentCodeLen) {
-  // ...
-  return RUNTIME_OK;
-}
 
 
 static portTASK_FUNCTION_PROTO(runtimeTask, pvParameters) {
   (void) pvParameters;
 
-
-  while (1) {}
-  // Disable for now
-
-
   int ret = RUNTIME_OK, firstErr = RUNTIME_OK;
-  RuntimeMode mode = RuntimeModeUninitialized;
-
+  TenshiActorState a;
+  const char studentcode[] =
+    "sensor = get_device('stestsensor')\n"
+    "actuator = get_device('atestactuator')\n"
+    "sensor_sampled = triggers.sampled(sensor)\n"
+    "\n"
+    "while true do\n"
+    "    local val = sensor_sampled:recv()\n"
+    "    print('sensor is ' .. tostring(val))\n"
+    "    actuator:send({val})\n"
+    "end";
 
   // Initialization
-  registerSensorUpdateCallback(&sensorUpdateCallback);
-
   led_driver_set_mode(PATTERN_JUST_RED);
-  led_driver_set_fixed(0b110, 0b111);
+  led_driver_set_fixed(0b1110, 0b111);
 
-
-  // Wait until smart sensor enumeration finishes
-  ssBlockUntilActive();
-
-  mode = RuntimeModeDisabled;
-
-
-  // TODO(cduck): Why does the linnker fail when TenshiRuntimeInit is compiled?
+  // Init runtime
   TenshiRuntimeState s = TenshiRuntimeInit();
 
   led_driver_set_mode(PATTERN_JUST_RED);
-  led_driver_set_fixed(0b101, 0b111);
+  led_driver_set_fixed(0b1101, 0b111);
 
-  const char studentcode[] =
-    "install_trap_global()\n"   // Normally this would be further down
-    "input_dev = get_device('input')\n"
-    "input = triggers.changed(input_dev)\n"
-    "output = get_device('output')\n"
-    "\n"
-    "print('units.mega = ' .. units.mega)\n"
-    "print('units.kilo = ' .. units.kilo)\n"
-    "print('units.mili = ' .. units.mili)\n"
-    "print('units.micro = ' .. units.micro)\n"
-    "print('units.nano = ' .. units.nano)\n"
-    "print('units.inch = ' .. units.inch)\n"
-    "print('units.pound = ' .. units.pound)\n"
-    "print('units.deg = ' .. units.deg)\n"
-    "\n"
-    "while true do\n"
-    "    print('about to recv')\n"
-    "    local x = input:recv()\n"
-    "    if x == nil then x = 0 end\n"
-    "    print('recv: ' .. x)\n"
-    "    x = x + 1"
-    "    print('sending using value')\n"
-    "    output.value = x\n"
-    "    print('sent: ' .. x)\n"
-    "end";
+  TenshiRegisterCFunctions(s, runtime_register);
 
-  TenshiActorState a;
+  // Wait for sensor enumeration
+  ssBlockUntilActive();  // TODO(cduck): Should respond to radio during enum.
 
-  ret = registerAllSensors(s);
   if (ret != RUNTIME_OK && firstErr == RUNTIME_OK) firstErr = ret;
+  if (firstErr != RUNTIME_OK )led_driver_set_fixed(firstErr, 0b111);
 
   ret = LoadStudentcode(s, studentcode, strlen(studentcode), &a);
   if (ret != RUNTIME_OK && firstErr == RUNTIME_OK) firstErr = ret;
+  if (firstErr != RUNTIME_OK )led_driver_set_fixed(firstErr, 0b111);
 
   ret = ActorSetRunnable(a, 1);
   if (ret != RUNTIME_OK && firstErr == RUNTIME_OK) firstErr = ret;
+  if (firstErr != RUNTIME_OK )led_driver_set_fixed(firstErr, 0b111);
 
-  mode = RuntimeModeTeleop;
+  gameMode = RuntimeModeTeleop;
 
   led_driver_set_mode(PATTERN_JUST_RED);
-  led_driver_set_fixed(0b100, 0b111);
+  led_driver_set_fixed(0b1011, 0b111);
 
   int i = 0;
   while (1) {
@@ -180,35 +137,27 @@ static portTASK_FUNCTION_PROTO(runtimeTask, pvParameters) {
         SSState *sensor = msg.sensor;
 
         led_driver_set_mode(PATTERN_JUST_RED);
-        led_driver_set_fixed(0b011, 0b111);
+        led_driver_set_fixed(0b1001, 0b111);
 
-        // TODO(cduck): Replace 0 with actual value
-        TenshiMainStackPushFloat(s, 0);
-        ret = MBoxSendSensor(s, sensor->id, sizeof(sensor->id));
-        if (ret != RUNTIME_OK && firstErr == RUNTIME_OK) firstErr = ret;
+        for (int c = 0; c < sensor->channelsNum; c++) {
+          SSChannel *channel = sensor->channels[c];
+          if (!channel->isProtected) {
+            TenshiFlagSensor(s, channel);
+          }
+        }
       } else {
         // TODO(cduck): Handle radio input
         led_driver_set_mode(PATTERN_JUST_RED);
-        led_driver_set_fixed(0b010, 0b111);
+        led_driver_set_fixed(0b1010, 0b111);
       }
     }
 
     ret = TenshiRunQuanta(s);
     if (ret != RUNTIME_OK && firstErr == RUNTIME_OK) firstErr = ret;
+    if (firstErr != RUNTIME_OK )led_driver_set_fixed(firstErr, 0b111);
 
     led_driver_set_mode(PATTERN_JUST_RED);
     led_driver_set_fixed(0b1100, 0b111);
-
-    update_info *ui_orig = MBoxGetActuatorsChanged(s);
-    update_info *ui = ui_orig;
-    while (ui) {
-      for (int j = 0; j < ui->num_data; j++) {
-        ret = MBoxRecvActuator(s, ui->id, ui->id_len);
-        double x = TenshiMainStackGetFloat(s);
-      }
-      ui = ui->next;
-    }
-    MBoxFreeUpdateInfo(ui_orig);
 
     i++;
   }
