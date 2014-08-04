@@ -405,7 +405,7 @@ local function decode_inner(str, offset, depth)
         while str:sub(elt_offset, elt_offset) ~= ']' do
           val, elt_offset, skip = read_val(str, elt_offset, depth + 1)
           if not skip then
-            out[i] = val
+            insert(out, val)
           end
         end
       end
