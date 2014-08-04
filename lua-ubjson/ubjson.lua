@@ -116,6 +116,15 @@ local encode_inner
 --         memo is a table mapping currently entered tables to true
 --         depth is the recursion depth from the user's call
 local function array_helper(val)
+  -- TODO(kzentner): Handle integer tags more intelligently.
+  -- Currently, this function only handles integers well when every integer is
+  -- expected to have the same tag. In theory, this could produce an array for
+  -- any integer type tag, but in practice probably will almost always only
+  -- produce 'U'.
+  -- Basically, this function expects val_tag to return the same tag for every
+  -- value if the fixed-type container optimization can be applied. This is
+  -- definitely not true. For example, [0, -1, 2] produces the tags ['U', 'i',
+  -- 'U'], but all the entries can be represented by one signed byte.
   local t = nil
   local length = 0
   local non_int = false
