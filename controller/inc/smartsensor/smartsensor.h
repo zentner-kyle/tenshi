@@ -18,6 +18,7 @@
 
 void smartsensor_init();
 
+int ssIsActive();
 void ssBlockUntilActive();
 void registerSensorUpdateCallback(void(*func)(uint16_t i, SSState *sensor));
 

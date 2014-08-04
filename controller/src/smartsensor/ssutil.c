@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "inc/smartsensor/ssutil.h"
+#include "inc/smartsensor/sstype.h"
 #include "inc/smartsensor/cobs.h"
 #include "inc/smartsensor/crc.h"
 
@@ -321,6 +322,22 @@ size_t ss_add_sensors(KnownIDs *sensors) {
   xSemaphoreGive(sensorArrLock);
   return index;
 }
+SSState *ss_find_sensor(uint8_t id[SMART_ID_LEN]) {
+  for (int i = 0; i < numSensors; i++) {
+    uint8_t *id2 = sensorArr[i]->id;
+    int match = 1;
+    for (int j = SMART_ID_LEN-1; j >= 0; j--) {
+      if (id[j] != id2[j]) match = 0;
+      if (match == 0) break;
+    }
+    if (match) {
+      return sensorArr[i];
+    }
+  }
+  return NULL;
+}
+
+
 void ss_recieved_data_for_sensor(SSState *s, uint8_t *data, size_t len,
   uint8_t inband) {
   if (!inband) {
