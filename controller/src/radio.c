@@ -1,4 +1,5 @@
 
+#include <string.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <sys/iosupport.h>
@@ -15,6 +16,17 @@
 #include "inc/xbee_framing.h"
 
 #include "legacy_piemos_framing.h"   // NOLINT(build/include)
+
+
+// Hard coded
+volatile uint64_t host_addr = 0x958D994000A21300;  // Bytes reversed
+#define TOTAL_PACKET_SIZE 128
+#define NDL3_PACKET_SIZE (TOTAL_PACKET_SIZE-21)
+
+
+void radio_send_xbee(uint8_t *data, size_t len);
+
+
 
 // Redirect printf, etc. to the radio
 
@@ -61,7 +73,7 @@ static portTASK_FUNCTION_PROTO(radioNewTask, pvParameters);
 BaseType_t radioInit() {
   radio_driver_init();
 
-  return xTaskCreate(radioNewTask, "Runtime", 1024, NULL, tskIDLE_PRIORITY,
+  return xTaskCreate(radioNewTask, "Radio", 1024, NULL, tskIDLE_PRIORITY,
                      NULL);
 }
 
@@ -77,12 +89,54 @@ int radio_uart_serial_send_and_finish_data(const uint8_t *data, size_t len) {
   return uart_serial_send_finish(radio_driver, txn);
 }
 
+void radio_send_xbee(uint8_t *data, size_t len) {
+  if (len > NDL3_PACKET_SIZE) return;
+
+  // TODO(cduck): Do Robert's TODOs below
+
+  // TODO(rqou): Hack
+  uint8_t txbuf[TOTAL_PACKET_SIZE];
+
+  // Create magic struct
+  xbee_api_packet *packetOut = (xbee_api_packet *)(txbuf);
+  packetOut->xbee_api_magic = XBEE_MAGIC;
+  int payloadLen = sizeof(xbee_tx64_header) + len+1;
+  packetOut->length = __REV16(payloadLen);
+  packetOut->payload.tx64.xbee_api_type = XBEE_API_TYPE_TX64;
+  packetOut->payload.tx64.frameId = 0;
+  packetOut->payload.tx64.xbee_dest_addr = host_addr;
+  packetOut->payload.tx64.options = 0;
+
+  packetOut->payload.tx64.data[0] = NDL3_IDENT;
+  memcpy(packetOut->payload.tx64.data+1, data, len);
+
+  xbee_fill_checksum(packetOut);
+
+  // TODO(rqou): Asynchronous?
+  // TODO(rqou): Abstract away the +4 properly
+  // TODO(rqou): Error handling
+  void *txn = uart_serial_send_data(radio_driver, txbuf, payloadLen + 4);
+  while ((uart_serial_send_status(radio_driver, txn) !=
+      UART_SERIAL_SEND_DONE) &&
+      (uart_serial_send_status(radio_driver, txn) !=
+        UART_SERIAL_SEND_ERROR)) {}
+  uart_serial_send_finish(radio_driver, txn);
+}
+void *ndAlloc(NDL3_size size, void * userdata) {
+  (void) userdata;
+  return pvPortMalloc(size);
+}
+void ndFree(void * to_free, void * userdata) {
+  (void) userdata;
+  vPortFree(to_free);
+}
+
 
 
 static portTASK_FUNCTION_PROTO(radioNewTask, pvParameters) {
   (void) pvParameters;
 
-  NDL3Net * target = NDL3_new(pvPortMalloc, vPortFree, NULL);
+  NDL3Net * target = NDL3_new(ndAlloc, ndFree, NULL);
   NDL3_open(target, NDL3_UBJSON_PORT);
   NDL3_open(target, NDL3_STRING_PORT);
   NDL3_open(target, NDL3_CODE_PORT);
@@ -91,9 +145,9 @@ static portTASK_FUNCTION_PROTO(radioNewTask, pvParameters) {
   char * recvMsg = NULL;
 
   const uint8_t prefixLen = 1;
-  uint8_t buffer[256];
-  buffer[0] = NDL3_IDENT;
-  uint8_t *ndlBuffer = buffer+prefixLen;
+  xbee_api_packet *recXbeePacket;
+  xbee_rx64_header *recXbeeHeader;
+  uint8_t buffer[NDL3_PACKET_SIZE];
   NDL3_size popSize = 0;
   NDL3_size recvSize = 0;
   NDL3_size uartRecvSize = 0;
@@ -124,17 +178,19 @@ static portTASK_FUNCTION_PROTO(radioNewTask, pvParameters) {
       NDL3_send(target, NDL3_STRING_PORT, in_msg, 1 + strlen(in_msg));
     }
 
-    uint8_t *recvUart = uart_serial_receive_packet(radio_driver,
+    recXbeePacket = (xbee_api_packet*)uart_serial_receive_packet(radio_driver,
       &uartRecvSize, 0);
-    if (recvUart) {
-      if (uartRecvSize >= prefixLen && recvUart[0] == NDL3_IDENT) {
-        NDL3_L2_push(target, recvUart, uartRecvSize-prefixLen);
+    if (recXbeePacket) {
+      recXbeeHeader = &(recXbeePacket->payload);
+      if (uartRecvSize >= prefixLen && recXbeeHeader->data[0] == NDL3_IDENT) {
+        NDL3_L2_push(target, (uint8_t*)recXbeeHeader->data+1,
+                     recXbeePacket->length-sizeof(xbee_rx64_header)-prefixLen);
       }
-      vPortFree(recvUart);
+      vPortFree(recXbeePacket);
     }
 
-    NDL3_L2_pop(target, ndlBuffer, sizeof(buffer)-prefixLen, &popSize);
-    radio_uart_serial_send_and_finish_data(buffer, popSize+prefixLen);
+    NDL3_L2_pop(target, buffer, NDL3_PACKET_SIZE, &popSize);
+    radio_send_xbee(buffer, popSize);
 
     NDL3_elapse_time(target, 1);
 

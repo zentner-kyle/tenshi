@@ -52,8 +52,8 @@ BaseType_t runtimeInit() {
   // Get updates from smart sensor protocol
   registerSensorUpdateCallback(&sensorUpdateCallback);
 
-  return xTaskCreate(runtimeTask, "Runtime", 2048, NULL, tskIDLE_PRIORITY,
-                     NULL);
+  return 0;  // xTaskCreate(runtimeTask, "Runtime", 512, NULL, tskIDLE_PRIORITY,
+             //         NULL);
 }
 
 void runtimeSendRadioMsg(RuntimeMessageType type, void* info) {
@@ -100,13 +100,13 @@ static portTASK_FUNCTION_PROTO(runtimeTask, pvParameters) {
 
   // Initialization
   led_driver_set_mode(PATTERN_JUST_RED);
-  led_driver_set_fixed(0b1110, 0b111);
+  led_driver_set_fixed(0b1101, 0b111);
 
   // Init runtime
   TenshiRuntimeState s = TenshiRuntimeInit();
 
   led_driver_set_mode(PATTERN_JUST_RED);
-  led_driver_set_fixed(0b1101, 0b111);
+  led_driver_set_fixed(0b1110, 0b111);
 
   TenshiRegisterCFunctions(s, runtime_register);
 
