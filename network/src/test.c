@@ -531,27 +531,18 @@ int main() {
         printf("error = %d\n", e);
       }
       NDL3_recv(target, 1, (void **) &out_msg, NULL);
-      /*memset(buffer, 0, sizeof(buffer));*/
       NDL3_L2_pop(host, buffer, sizeof(buffer), NULL);
       if ((rand() >> 16) & 0x3) {  /* NOLINT(runtime/threadsafe_fn) */
         memset(buffer, 0, sizeof(buffer));
       }
       NDL3_elapse_time(host, 100);
       NDL3_elapse_time(target, 100);
-      /*if (rand() & 0xff) {*/
-        /*int r = rand() & 0xff;*/
-        /*memset(buffer + r, 0, sizeof(buffer) - r);*/
-      /*}*/
       NDL3_L2_push(target, buffer, sizeof(buffer));
       memset(buffer, 0, sizeof(buffer));
       NDL3_L2_pop(target, buffer, sizeof(buffer), NULL);
       if ((rand() >> 16) & 0x3) {  /* NOLINT(runtime/threadsafe_fn) */
         memset(buffer, 0, sizeof(buffer));
       }
-      /*if (rand() & 0xff) {*/
-        /*int r = rand() & 0xff;*/
-        /*memset(buffer + r, 0, sizeof(buffer) - r);*/
-      /*}*/
       NDL3_L2_push(host, buffer, sizeof(buffer));
       memset(buffer, 0, sizeof(buffer));
 
