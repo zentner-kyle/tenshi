@@ -516,7 +516,8 @@ void NDL3_L2_pop(NDL3Net * restrict net,
     net->ports[i].pkt_last_serviced = (net->ports[i].pkt_last_serviced + 1) %
         NDL3_PACKETS_PER_PORT;
     for (int j_base = 0; j_base < NDL3_PACKETS_PER_PORT; j_base++) {
-      int j = (j_base + net->ports[i].pkt_last_serviced) % NDL3_PACKETS_PER_PORT;
+      int j = (j_base + net->ports[i].pkt_last_serviced) %
+        NDL3_PACKETS_PER_PORT;
       /* Service incoming packets. */
       semi_packet * pkt = &net->ports[i].in_pkts[j];
       if (pkt->state & PACKET_OPEN) {
