@@ -575,6 +575,7 @@ int main() {
     }
     free(out_msg);
   }
-  printf("Received %d/%d (%02f%%) packets\n", good, total, 100 * (float) good / total);
+  printf("Received %d/%d (%02f%%) packets\n",
+         good, total, 100 * (float) good / total);
   return 0;
 }
