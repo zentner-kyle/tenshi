@@ -52,8 +52,8 @@ BaseType_t runtimeInit() {
   // Get updates from smart sensor protocol
   registerSensorUpdateCallback(&sensorUpdateCallback);
 
-  return 0;  // xTaskCreate(runtimeTask, "Runtime", 512, NULL, tskIDLE_PRIORITY,
-             //         NULL);
+  return;  // xTaskCreate(runtimeTask, "Runtime", 512, NULL, tskIDLE_PRIORITY,
+           //          NULL);
 }
 
 void runtimeSendRadioMsg(RuntimeMessageType type, void* info) {
@@ -84,6 +84,9 @@ void setLedError(int err) {
 
 static portTASK_FUNCTION_PROTO(runtimeTask, pvParameters) {
   (void) pvParameters;
+
+  // Wait for sensor enumeration
+  ssBlockUntilActive();  // TODO(cduck): Should respond to radio during enum.
 
   int ret = RUNTIME_OK, firstErr = RUNTIME_OK;
   TenshiActorState a;

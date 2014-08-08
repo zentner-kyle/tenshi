@@ -19,12 +19,14 @@
 
 
 // Hard coded
-volatile uint64_t host_addr = 0x958D994000A21300;  // Bytes reversed
+volatile uint64_t host_addr = 0;  // Bytes reversed
 #define TOTAL_PACKET_SIZE 128
 #define NDL3_PACKET_SIZE (TOTAL_PACKET_SIZE-21)
 
 
 void radio_send_xbee(uint8_t *data, size_t len);
+void *ndAlloc(NDL3_size size, void * userdata);
+void ndFree(void * to_free, void * userdata);
 
 
 
@@ -108,7 +110,7 @@ void radio_send_xbee(uint8_t *data, size_t len) {
   packetOut->payload.tx64.options = 0;
 
   packetOut->payload.tx64.data[0] = NDL3_IDENT;
-  memcpy(packetOut->payload.tx64.data+1, data, len);
+  memcpy(&(packetOut->payload.tx64.data[1]), data, len);
 
   xbee_fill_checksum(packetOut);
 
@@ -116,15 +118,13 @@ void radio_send_xbee(uint8_t *data, size_t len) {
   // TODO(rqou): Abstract away the +4 properly
   // TODO(rqou): Error handling
   void *txn = uart_serial_send_data(radio_driver, txbuf, payloadLen + 4);
-  while ((uart_serial_send_status(radio_driver, txn) !=
-      UART_SERIAL_SEND_DONE) &&
-      (uart_serial_send_status(radio_driver, txn) !=
-        UART_SERIAL_SEND_ERROR)) {}
-  uart_serial_send_finish(radio_driver, txn);
+  while (!uart_serial_send_finish(radio_driver, txn)) {}
 }
 void *ndAlloc(NDL3_size size, void * userdata) {
   (void) userdata;
-  return pvPortMalloc(size);
+  void *ret = pvPortMalloc(size);
+  while (!ret) {}
+  return ret;
 }
 void ndFree(void * to_free, void * userdata) {
   (void) userdata;
@@ -151,48 +151,68 @@ static portTASK_FUNCTION_PROTO(radioNewTask, pvParameters) {
   NDL3_size popSize = 0;
   NDL3_size recvSize = 0;
   NDL3_size uartRecvSize = 0;
-  int a = 0;
+  int a = 1;
+
+  portTickType time = xTaskGetTickCount();
+  portTickType lastTime = time;
+
   while (1) {
+    recvMsg = NULL;
+    recvSize = 0;
     NDL3_recv(target, NDL3_UBJSON_PORT, (void **) &recvMsg, &recvSize);
     // Do stuff with recieved message
-    if (recvSize >= 1) {
+    if (recvMsg && recvSize >= 1) {
       led_driver_set_mode(PATTERN_JUST_RED);
-      led_driver_set_fixed(recvMsg[0], 0b111);
+      led_driver_set_fixed(recvMsg[3]-1, 0b111);
     }
     vPortFree(recvMsg);
 
+    recvMsg = NULL;
+    recvSize = 0;
     NDL3_recv(target, NDL3_STRING_PORT, (void **) &recvMsg, &recvSize);
     // Do stuff with recieved message
 
     vPortFree(recvMsg);
 
+    recvMsg = NULL;
+    recvSize = 0;
     NDL3_recv(target, NDL3_CODE_PORT, (void **) &recvMsg, &recvSize);
     // Do stuff with recieved message
 
     vPortFree(recvMsg);
 
 
-    if (a % 1000 == 0) {
+    if (a % 500 == 0 && host_addr != 0) {
       // Send message
       in_msg[strlen(in_msg) - 1] = (char) (a/1000%10) + '0';
       NDL3_send(target, NDL3_STRING_PORT, in_msg, 1 + strlen(in_msg));
+    } else {
+      a = 0;
     }
 
     recXbeePacket = (xbee_api_packet*)uart_serial_receive_packet(radio_driver,
       &uartRecvSize, 0);
     if (recXbeePacket) {
       recXbeeHeader = &(recXbeePacket->payload);
-      if (uartRecvSize >= prefixLen && recXbeeHeader->data[0] == NDL3_IDENT) {
-        NDL3_L2_push(target, (uint8_t*)recXbeeHeader->data+1,
-                     recXbeePacket->length-sizeof(xbee_rx64_header)-prefixLen);
+      if (recXbeeHeader->xbee_api_type == XBEE_API_TYPE_RX64) {
+        host_addr = recXbeeHeader->xbee_src_addr;
+        if (uartRecvSize >= prefixLen && recXbeeHeader->data[0] == NDL3_IDENT) {
+          NDL3_L2_push(target, (uint8_t*)recXbeeHeader->data+1,
+            recXbeePacket->length-sizeof(xbee_rx64_header)-prefixLen);
+        }
       }
       vPortFree(recXbeePacket);
     }
 
+    popSize = 0;
     NDL3_L2_pop(target, buffer, NDL3_PACKET_SIZE, &popSize);
-    radio_send_xbee(buffer, popSize);
+    if (popSize > 0) {
+      radio_send_xbee(buffer, popSize);
+    }
 
-    NDL3_elapse_time(target, 1);
+    time = xTaskGetTickCount();
+    NDL3_elapse_time(target, time-lastTime);
+    lastTime = time;
 
     a++;
     // vTaskDelay(200 / portTICK_RATE_MS);
