@@ -126,7 +126,7 @@ function send_L2 () {
   call('free', send_block);
   var xbee_packet = xbee.createPacket(send_buf, this.address);
   this.emit('send_data', xbee_packet);
-  throw_on_NDL3_error(this.net);
+  //throw_on_NDL3_error(this.net);
 }
 
 function read_handler(evt) {
@@ -150,6 +150,7 @@ function recv_L2 (rxbuf) {
   call('NDL3_L2_push', this.net, ptr, data.length);
   call('free', ptr);
 
+  console.log('check_L3');
   check_L3.apply(this);
   // Ignore errors due to bad packets.
   call('NDL3_pop_error', this.net);
@@ -167,13 +168,16 @@ function check_L3() {
   check_port.apply(this, [CODE_PORT, function (buf) {
     this.emit('code', buf);
   }]);
+  //throw_on_NDL3_error(this.net);
 }
 
 function check_port(port, callback) {
   /* jshint validthis: true */
+  console.log('in check port');
   var ptrs_buf = buffer.Buffer(emcc_tools.PTR_SIZE * 2);
   ptrs_buf.fill(0);
   var ptrs = emcc_tools.buffer_to_ptr(ndl3, ptrs_buf);
+  console.log('calling NDL3_recv');
   call('NDL3_recv', this.net, port, ptrs, ptrs + emcc_tools.PTR_SIZE);
   var msg_ptr = emcc_tools.get_ptr(ndl3, ptrs);
   var size = emcc_tools.get_ptr(ndl3, ptrs + emcc_tools.PTR_SIZE);
@@ -182,7 +186,6 @@ function check_port(port, callback) {
     var buf = emcc_tools.ptr_to_buffer(ndl3, msg_ptr, size);
     callback.apply(this, [buf]);
   }
-  throw_on_NDL3_error(this.net);
 }
 
 function throw_on_NDL3_error(net) {
