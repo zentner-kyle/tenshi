@@ -132,9 +132,8 @@ function read_handler(evt) {
   this.emit('data', evt.data);
 }
 
-function recv_L2 (evt) {
+function recv_L2 (rxbuf) {
   /* jshint validthis: true */
-  var rxbuf = evt.data;
   var ptr = emcc_tools.buffer_to_ptr(ndl3, rxbuf);
   call('NDL3_L2_push', this.net, ptr, rxbuf.length);
   call('free', ptr);
