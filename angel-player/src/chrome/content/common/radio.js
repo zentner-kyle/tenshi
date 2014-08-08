@@ -121,9 +121,9 @@ function send_L2 () {
   throw_on_NDL3_error(this.net);
 }
 
-function read_handler(data) {
+function read_handler(evt) {
   /* jshint validthis: true */
-  this.emit('data', data);
+  this.emit('data', evt.data);
 }
 
 function recv_L2 (evt) {
