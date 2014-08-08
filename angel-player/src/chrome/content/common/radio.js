@@ -138,6 +138,7 @@ function recv_L2 (rxbuf) {
   /* jshint validthis: true */
   // We need to extract the payload from the xbee packet.
   var data = xbee.extractPayload(rxbuf);
+  console.log('payload', data);
   var ptr = emcc_tools.buffer_to_ptr(ndl3, data);
   call('NDL3_L2_push', this.net, ptr, data.length);
   call('free', ptr);
