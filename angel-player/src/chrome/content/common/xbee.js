@@ -15,6 +15,33 @@ typpo.set_target_type('ARM');
 typpo.load_type_file(url.toFilename(XBEE_FRAMING_YAML_FILE), false);
 
 
+var Accumulator = function(serportObj) {
+  EventEmitter.apply(this);
+  this.buf = buffer.Buffer(MAX_XBEE_PACKET_SIZE);
+  this.offset = 0;
+  this._on_recv = on_recv.bind(this);
+  this.serportObj = serportObj;
+  serportObj.on('data', this._on_recv);
+};
+
+Accumulator.prototype = Object.create(EventEmitter.prototype);
+
+Accumulator.prototype.destroy = function () {
+  this.serportObj.off('data', this._on_recv);
+};
+
+var on_recv = function (data) {
+  data.copy(this.buf, this.offset, 0, data.length);
+  this.offset += data.length;
+  var buf = this.buf.slice(0, this.offset);
+  if (exports.isFullPacket(buf)) {
+    this.buf = buffer.Buffer(MAX_XBEE_PACKET_SIZE);
+    this.offset = 0;
+    this.emit('data', buf);
+  }
+};
+
+
 // This module contains utilities for using an XBee radio.
 // TODO(kzentner): Move other, duplicated xbee functionality here.
 
@@ -79,6 +106,31 @@ exports.createPacket = function (payload, address) {
       buf.length - 1 - (3));
 
   return buf;
+};
+
+// Returns true if buf contains *exactly* a single valid XBee packet.
+// Extra space at the end of the buffer is not allowed.
+exports.isFullPacket = function (buf) {
+  var header_size = typpo.get_size('xbee_api_packet', true);
+  if (buf.length < header_size) {
+    return false;
+  }
+  try {
+    var xbee_packet = typpo.read('xbee_api_packet', buf);
+    var length = xbee_packet.get_slot('length');
+    var checksum_size = 1;
+    if (buf.length === length + header_size + checksum_size) {
+      var checksum = exports.computeChecksum(buf,
+          header_size, buf.length - header_size - checksum_size);
+      if (checksum === buf[buf.length - 1]) {
+        return true;
+      }
+    }
+  } catch (_) {
+    // The packet caused an error, so it was almost certainly corrupt (and thus
+    // not a full packet).
+  }
+  return false;
 };
 
 exports.extractPayload = function (rxPacket) {
