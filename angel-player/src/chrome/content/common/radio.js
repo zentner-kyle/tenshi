@@ -119,6 +119,7 @@ Radio.prototype.disconnectXBee = function () {
   }
   this.address = null;
   this.serportObj = null;
+  this.off('send_data', this._send_data);
 };
 
 function send_L2 () {
