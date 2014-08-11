@@ -32,7 +32,9 @@ body {
     width: 0.5em;
     height: 0.5em;
     background-color: gray;
-    float: right;
+    right: 0;
+    bottom: 0;
+    position: fixed;
 }
 
 #mainContent {
