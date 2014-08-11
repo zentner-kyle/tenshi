@@ -1,11 +1,16 @@
 #!/bin/bash -xe
 
+. tools/begin-build.sh
+
 ARGS="$@"
 if [ -z "$ARGS" ]; then
-  ARGS='configure
+  ARGS='--emcc-only
+        configure
         build_network/release_emscripten
         build_lua/release_emscripten
         build_vm/release_emscripten'
 fi
 
-./build.sh "$ARGS"
+./waf $ARGS
+
+./angel-player/build.sh
