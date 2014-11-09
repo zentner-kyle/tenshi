@@ -397,7 +397,7 @@ int TenshiRunQuanta(TenshiRuntimeState s) {
     if (ret != LUA_OK) return ret;
 
     if (!a) {
-      printf("NOTHING TO RUN!\n");
+      // printf("NOTHING TO RUN!\n");
       break;
     }
 
@@ -410,15 +410,15 @@ int TenshiRunQuanta(TenshiRuntimeState s) {
     }
 
     if (ret == THREADING_EXITED) {
-      printf("Thread exited!\n");
+      // printf("Thread exited!\n");
       ActorDestroy(a);
     } else if (ret == THREADING_YIELD) {
-      printf("Thread yielded (blocked)!\n");
+      // printf("Thread yielded (blocked)!\n");
       ret = ActorSetBlocked(a);
       if (ret != LUA_OK) return ret;
     } else if (ret == THREADING_PREEMPT) {
       // Requeue it
-      printf("Thread preempted!\n");
+      // printf("Thread preempted!\n");
       ret = ActorSetRunnable(a, 0);
       if (ret != LUA_OK) return ret;
     }
