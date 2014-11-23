@@ -21,6 +21,8 @@
 #include <assert.h> /* assert */
 #include <stdlib.h> /* malloc, free, size_t */
 
+#include <stdio.h>
+
 /**
  * Basically, works like this:
  * port is opened on host.
@@ -302,6 +304,20 @@ void  NDL3_send(NDL3Net * restrict net, NDL3_port port,
   net->last_error = NDL3_ERROR_PORT_NOT_OPEN;
 }
 
+static int older_packet_pending(port * p, semi_packet * pkt) {
+  for (int k = 0; k < NDL3_PACKETS_PER_PORT; k++) {
+    semi_packet * other_pkt = &p->in_pkts[k];
+    if (!(other_pkt->state & PACKET_EMPTY) &&
+        !(other_pkt->state & PACKET_POPPED) &&
+        other_pkt->number < pkt->number) {
+      printf("n = %d\n", pkt->number);
+      printf("n' = %d\n", other_pkt->number);
+      return 1;
+    }
+  }
+  return 0;
+}
+
 void NDL3_recv(NDL3Net * restrict net, NDL3_port port,
                void ** msg, NDL3_size * size) {
   int i;
@@ -315,6 +331,17 @@ void NDL3_recv(NDL3Net * restrict net, NDL3_port port,
       /* If we have all the data and it hasn't been popped. */
       if (pkt->last_offset == pkt->total_size &&
           !(pkt->state & PACKET_POPPED)) {
+        /* 
+         * Don't give this packet to the user if there's an older packet in
+         * progress.
+         */
+        if (net->ports[i].opt & NDL3_PORT_ORDERED) {
+          /*printf("*/
+        }
+        if ((net->ports[i].opt & NDL3_PORT_ORDERED) &&
+            older_packet_pending(&net->ports[i], pkt)) {
+          continue;
+        }
         pkt->state |= PACKET_POPPED;
         *msg = pkt->data;
         if (size != NULL) {

@@ -50,6 +50,7 @@
 #define NDL3_ERROR_INCOMPLETE_SEND     13
 
 #define NDL3_PORT_UNRELIABLE           1
+#define NDL3_PORT_ORDERED              2
 
 struct NDL3Net;
 typedef struct NDL3Net NDL3Net;
