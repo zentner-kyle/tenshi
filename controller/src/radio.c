@@ -46,6 +46,11 @@ typedef struct {
 
 QueueHandle_t radioQueue = NULL;
 
+// TODO(kzentner): This was moved here from main.c
+// TODO(rqou): This really doesn't go here.
+int8_t PiEMOSAnalogVals[7];
+uint8_t PiEMOSDigitalVals[8];
+
 
 // Hard coded
 volatile uint64_t host_addr = 0;  // Bytes reversed
@@ -192,6 +197,14 @@ static portTASK_FUNCTION_PROTO(radioNewTask, pvParameters) {
   portTickType time = xTaskGetTickCount();
   portTickType lastTime = time;
 
+  // Initialize PiEMOS values.
+  for (int i = 0; i < 7; i++) {
+    PiEMOSAnalogVals[i] = 0.0;
+  }
+  for (int i = 0; i < 8; i++) {
+    PiEMOSDigitalVals[i] = 0;
+  }
+
   while (1) {
     recvMsg = NULL;
     recvSize = 0;
@@ -297,9 +310,29 @@ static portTASK_FUNCTION_PROTO(radioNewTask, pvParameters) {
         }
 
         host_addr = recXbeeHeader->xbee_src_addr;
-        if (uartRecvSize >= prefixLen && recXbeeHeader->data[0] == NDL3_IDENT) {
-          NDL3_L2_push(target, (uint8_t*)recXbeeHeader->data+1,
-            recXbeePacket->length-sizeof(xbee_rx64_header)-prefixLen);
+        uint8_t ident_byte = recXbeeHeader->data[0];
+        switch (ident_byte) {
+          case NDL3_IDENT:
+            {
+              NDL3_L2_push(target, (uint8_t*)recXbeeHeader->data+1,
+                recXbeePacket->length-sizeof(xbee_rx64_header)-prefixLen);
+            }
+            break;
+          case PIER_INCOMINGDATA_IDENT:
+            {
+              pier_incomingdata *incomingData =
+                (pier_incomingdata *)(recXbeeHeader->data);
+              // TODO(kzentner): This was copied from main.c
+              // TODO(rqou): This code is terribly hardcoded.
+              for (int i = 0; i < 7; i++) {
+                PiEMOSAnalogVals[i] =
+                  (float)((int)incomingData->analog[i] - 127) / 127.0f * 100.0f;
+              }
+              for (int i = 0; i < 8; i++) {
+                PiEMOSDigitalVals[i] = !!(incomingData->digital & (1 << i));
+              }
+            }
+            break;
         }
       }
     }

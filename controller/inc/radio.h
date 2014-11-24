@@ -33,5 +33,10 @@ void radioPushBulk(const code_port *data, size_t len);
 void radioPushConfig(const config_port *data, size_t len);
 void radioPushFast(const char *ubjson, size_t len);
 
+// TODO(kzentner): This was moved here from main.c
+// TODO(rqou): This really doesn't go here.
+extern int8_t PiEMOSAnalogVals[7];
+extern uint8_t PiEMOSDigitalVals[8];
+
 
 #endif  // INC_RADIO_H_
