@@ -331,6 +331,23 @@ static portTASK_FUNCTION_PROTO(radioNewTask, pvParameters) {
               for (int i = 0; i < 8; i++) {
                 PiEMOSDigitalVals[i] = !!(incomingData->digital & (1 << i));
               }
+              // TODO(cduck): Don't do this
+              if (ssIsActive()) {
+                // Print sensor IDs over radio
+                for (int i = 0; i < numSensors; i++) {
+                  SSState *sensor = sensorArr[i];
+                  printf("Device type 0x%02x: %02x%02x%02x%02x%02x%02x%02x%02x\n",
+                         sensor->primaryType,
+                         sensor->id[0],
+                         sensor->id[1],
+                         sensor->id[2],
+                         sensor->id[3],
+                         sensor->id[4],
+                         sensor->id[5],
+                         sensor->id[6],
+                         sensor->id[7]);
+                }
+              }
             }
             break;
         }
